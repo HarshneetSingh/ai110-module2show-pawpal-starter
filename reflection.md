@@ -4,13 +4,25 @@
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+**Three core user actions:**
+1. **Add a pet and owner info** — the user enters their name, their pet's name/species, and how many minutes per day they have available for pet care. This gives the scheduler its time constraint.
+2. **Add and edit care tasks** — the user creates tasks (walk, feeding, medication, grooming, enrichment) each with a duration in minutes and a priority level (1 = low, 5 = critical). Tasks can be added or removed before generating the plan.
+3. **Generate today's daily plan** — the scheduler takes all tasks, fits as many as possible within the owner's available time budget starting from highest priority, and displays the selected tasks along with a plain-English explanation of why each was included or excluded.
+
+**Classes and responsibilities:**
+
+- `Pet` — holds the pet's name and species. Pure data object, no scheduling logic.
+- `Owner` — holds the owner's name and their daily available time in minutes. Acts as the time constraint source.
+- `Task` — holds task name, duration, priority (1–5), and category. Comparable by priority so the scheduler can sort them.
+- `Scheduler` — owns the owner, pet, and task list. Responsible for `add_task()`, `remove_task()`, `generate_plan()` (greedy priority sort + time-fit), and `explain_plan()` (plain-English reasoning for each included/excluded task).
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+After reviewing the skeleton, two bottlenecks were identified and fixed:
+
+1. **Added `_plan` cache to `Scheduler`** — the original design had `generate_plan()` and `explain_plan()` as independent methods, but `explain_plan()` needs to know which tasks were selected. Without a stored result, it would either have to recompute the plan (wasteful) or produce an explanation with no data. The fix was adding `self._plan: Optional[List[Task]] = None` so `generate_plan()` stores its result and `explain_plan()` reads from it.
+
+2. **Added `__post_init__` validation to `Task`** — a priority of 0 or -1 would silently sort to the bottom and a zero-duration task would always be included. These are system-boundary inputs (from the UI), so validating them at construction time catches errors early rather than producing a subtly wrong plan.
 
 ---
 
