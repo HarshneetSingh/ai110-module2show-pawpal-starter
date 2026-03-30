@@ -22,6 +22,71 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## Features
+
+- **Owner & multi-pet setup** — register an owner with a daily time budget and any number of pets
+- **Task management** — add tasks with duration, priority (1–5), category, and frequency (once / daily / weekly)
+- **Priority-based scheduling** — greedy planner fits the highest-priority tasks within the time budget
+- **Time-sorted view** — scheduled tasks displayed in chronological HH:MM order
+- **Recurring tasks** — completing a daily/weekly task auto-generates the next occurrence
+- **Conflict detection** — window-overlap check flags any tasks whose time ranges collide
+- **Filter view** — filter all tasks by pet name and/or completion status
+- **Plain-English explanation** — scheduler explains why each task was included or excluded
+
+## Final UML Diagram
+
+```mermaid
+classDiagram
+    class Owner {
+        +String name
+        +int available_minutes_per_day
+        +List~Pet~ pets
+        +add_pet(pet: Pet) None
+        +all_tasks() List~Task~
+        +__str__() String
+    }
+
+    class Pet {
+        +String name
+        +String species
+        +List~Task~ tasks
+        +add_task(task: Task) None
+        +remove_task(name: String) None
+        +__str__() String
+    }
+
+    class Task {
+        +String name
+        +int duration_minutes
+        +int priority
+        +String category
+        +bool completed
+        +String frequency
+        +date due_date
+        +String start_time
+        +mark_complete() None
+        +next_occurrence() Task
+        +__post_init__() None
+    }
+
+    class Scheduler {
+        +Owner owner
+        -List~Task~ _plan
+        -List~Task~ _excluded
+        +generate_plan() List~Task~
+        +explain_plan() String
+        +sort_by_time() List~Task~
+        +filter_tasks(pet_name, completed) List~Task~
+        +mark_task_complete(name) Task
+        +detect_conflicts() List~String~
+    }
+
+    Owner "1" --> "1..*" Pet : owns
+    Scheduler "1" --> "1" Owner : reads from
+    Scheduler "1" --> "0..*" Task : schedules
+    Pet "1" --> "0..*" Task : holds
+```
+
 ## Getting started
 
 ### Setup

@@ -30,8 +30,9 @@ After reviewing the skeleton, two bottlenecks were identified and fixed:
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+The scheduler considers two constraints: the owner's daily time budget (minutes available) and each task's priority (1–5). Time is the hard constraint — no plan can exceed the budget. Priority is the soft ordering rule — when the budget can't fit everything, higher-priority tasks are always scheduled first.
+
+I decided these two mattered most because they directly answer the pet owner's real problem: "I only have X minutes today — what's most important for my pet?" Category and frequency are metadata that inform the plan display and recurrence logic, but they don't affect which tasks get scheduled.
 
 **b. Tradeoffs**
 
@@ -45,13 +46,15 @@ The tradeoff is that this approach assumes tasks run back-to-back with no buffer
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I used Claude Code (Anthropic) across every phase of this project. In Phase 1 I used it to generate the Mermaid UML diagram from a description of four classes. In Phase 2 it scaffolded the class skeletons and flagged two bottlenecks in the design (missing `_plan` cache and lack of `Task` validation). In Phases 4–5 it implemented the sorting, filtering, recurrence, and conflict detection algorithms and wrote the full 21-test suite.
+
+The most effective prompts were concrete and scoped — e.g. "The divisor in update_score is wrong; it should use attempt_limit not difficulty rank. Fix it." Vague prompts like "improve the scheduler" produced over-engineered suggestions that I had to trim down.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+In the first pass on `update_score` the AI introduced `DIFFICULTY_LEVEL = {"Easy": 1, "Normal": 2, "Hard": 3}` as the divisor, producing a 50-point deduction per wrong guess on Normal instead of the correct 16. I caught this by playing the game manually: after one wrong guess on Normal, winning gave 50 points instead of 84. I reported the discrepancy, explained the correct formula (`int(100 / attempt_limit)`), and the AI corrected it. The lesson: always verify numeric logic against a concrete expected value, not just syntactic correctness.
+
+I also rejected the AI's first conflict detection implementation which compared only exact `start_time` strings. That would miss a case where task A starts at 08:00 (30 min) and task B starts at 08:15 — they overlap but have different start times. I replaced the equality check with a proper window-overlap check (`s2 < e1 and s1 < e2`).
 
 ---
 
@@ -59,13 +62,13 @@ The tradeoff is that this approach assumes tasks run back-to-back with no buffer
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+The 21-test suite covers: Task validation (priority/duration/frequency bounds), `mark_complete()` status change, recurrence (daily +1 day, weekly +7 days, one-off raises), Pet add/remove task count, Scheduler time-budget enforcement, priority ordering, start-time assignment, empty task list, `sort_by_time()` chronological order, `filter_tasks()` by pet and status, and conflict detection (clean plan → no conflicts; forced overlap → warning flagged).
+
+These tests matter because the scheduler's correctness is invisible to the user — a wrong deduction or a missed conflict would look like a working app but silently produce bad plans. Automated tests are the only reliable way to catch regressions during refactoring.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+★★★★☆ — all 21 tests pass and cover both happy paths and key edge cases. I'd add tests for: two pets with tasks at the same time, an owner with zero available minutes, and the Streamlit UI layer (e.g. verifying the warning banner appears when conflicts exist) with more time.
 
 ---
 
@@ -73,12 +76,12 @@ The tradeoff is that this approach assumes tasks run back-to-back with no buffer
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+I'm most satisfied with the "CLI-first" workflow — building and verifying all logic in `main.py` before touching `app.py` meant that by the time the UI was wired up, there were zero logic bugs to debug through the Streamlit interface. The clean separation between `pawpal_system.py` (logic) and `app.py` (display) also made the Streamlit code straightforward to write.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+I would add a `transition_buffer_minutes` field to `Owner` so the conflict detector accounts for travel time between tasks (e.g. walk ends at 08:30, next task can't start until 08:35). Right now back-to-back tasks never conflict, which is technically correct but unrealistic. I'd also persist the schedule to a JSON file so the owner's task history survives a page refresh.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+The most important thing I learned is that AI is a fast first-draft tool, not a final answer. Every significant piece of logic — the score divisor, the conflict detection algorithm, the `_plan` cache — needed human review to catch a subtle error or design gap. The AI wrote confident, syntactically correct code that was logically wrong in at least two places. The only way to trust it is to test against concrete expected values and reason about the edge cases yourself. Being the "lead architect" means you set the requirements, you verify the output, and you decide what to keep.
