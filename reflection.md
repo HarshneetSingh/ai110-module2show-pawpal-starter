@@ -35,8 +35,9 @@ After reviewing the skeleton, two bottlenecks were identified and fixed:
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+The conflict detection checks for overlapping time *windows* (start + duration) rather than exact start-time matches only. This means a 30-minute task starting at 08:00 and a 10-minute task starting at 08:15 will correctly be flagged as conflicting even though their start times differ.
+
+The tradeoff is that this approach assumes tasks run back-to-back with no buffer time between them. In reality, an owner might need 5 minutes to move between tasks (e.g., walk → feeding). A more accurate model would subtract a transition buffer from the available time. For a v1 pet care planner, ignoring transition time is a reasonable simplification — the plan still fits within the day and the owner can adjust manually.
 
 ---
 

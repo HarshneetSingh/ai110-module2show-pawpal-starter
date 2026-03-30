@@ -41,3 +41,32 @@ pip install -r requirements.txt
 5. Add tests to verify key behaviors.
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
+
+## Smarter Scheduling
+
+PawPal+ goes beyond a simple task list with four algorithmic features:
+
+- **Priority-based planning** — tasks are scheduled greedily from highest (5) to lowest (1) priority until the owner's daily time budget is exhausted.
+- **Time-sorted view** — `sort_by_time()` returns the plan in chronological order (HH:MM) so the owner sees tasks in the order they'll happen.
+- **Filtering** — `filter_tasks(pet_name, completed)` lets you view tasks for a specific pet or only see what's still outstanding.
+- **Recurring tasks** — tasks marked `frequency="daily"` or `"weekly"` automatically generate the next occurrence when completed via `mark_task_complete()`.
+- **Conflict detection** — `detect_conflicts()` scans the scheduled plan for overlapping time windows and returns plain-English warnings instead of crashing.
+
+## Testing PawPal+
+
+Run the full test suite:
+
+```bash
+python -m pytest tests/test_pawpal.py -v
+```
+
+**What the tests cover:**
+- `Task` validation (priority, duration, frequency bounds)
+- `mark_complete()` status change
+- Recurrence: daily → +1 day, weekly → +7 days, one-off → no recurrence
+- `Pet` add/remove task count
+- `Scheduler` time-budget enforcement, priority ordering, start-time assignment
+- Sorting correctness, pet/status filtering
+- Conflict detection (no conflicts on clean plan; flags manual overlaps)
+
+**Confidence level: ★★★★☆** — all 21 tests pass; edge cases like empty task lists and one-off vs recurring tasks are covered. Would add tests for the Streamlit UI layer and multi-owner scenarios with more time.
