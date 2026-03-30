@@ -87,6 +87,10 @@ classDiagram
     Pet "1" --> "0..*" Task : holds
 ```
 
+## 📸 Demo
+
+![PawPal+ App](assets/Demo.png)
+
 ## Getting started
 
 ### Setup
